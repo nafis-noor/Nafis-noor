@@ -1,0 +1,30 @@
+{
+  "entities": {
+    "users": {
+      "fields": {
+        "id": { "type": "string", "description": "The unique Firebase Auth user ID" },
+        "email": { "type": "string", "description": "User email address" },
+        "displayName": { "type": "string", "description": "User display name" },
+        "photoURL": { "type": "string", "description": "User profile avatar photo URL" },
+        "authProvider": { "type": "string", "description": "Auth provider e.g. google.com or password" },
+        "isNewUser": { "type": "boolean", "description": "Flag indicating if this is a newly registered user or returning user" },
+        "loginCount": { "type": "number", "description": "Number of times user has signed in" },
+        "createdAt": { "type": "string", "description": "ISO timestamp when the user account was first created" },
+        "lastLoginAt": { "type": "string", "description": "ISO timestamp of most recent login" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp when data was last updated" },
+        "role": { "type": "string", "description": "User security role: 'user' or 'admin'" },
+        "stats": { "type": "object", "description": "Complete persistent Noor Islamic user stats, streaks, bookmarks, XP, and settings" }
+      }
+    },
+    "users/chats": {
+      "fields": {
+        "id": { "type": "string", "description": "Chat session ID" },
+        "userId": { "type": "string", "description": "Owner user Auth UID" },
+        "title": { "type": "string", "description": "Title or topic of conversation" },
+        "messages": { "type": "array", "description": "Array of message objects" },
+        "createdAt": { "type": "string", "description": "ISO timestamp of creation" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp of last update" }
+      }
+    }
+  }
+}
