@@ -4,6 +4,6 @@
 
   <h1>Built with ALNOOR GROUP</h2>
 
-  <p>The fastest path from prompt to production with VS.</p>
+  <p>The fastest path production with VS.</p>
 
 </div>
