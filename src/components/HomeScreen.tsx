@@ -335,7 +335,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               })}
             </div>
 
-            {/* Quick Access to Prayer Check Oath Module */}
+            {/* Quick Access to Daily Prayer Check */}
             <div className="pt-2">
               <button
                 type="button"
@@ -344,11 +344,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               >
                 <div className="flex items-center gap-2">
                   <ShieldAlert className="w-4 h-4 text-[#DFBA7F]" />
-                  <span>Prayer Check — Confirm Under Oath</span>
+                  <span>Daily Prayer Check</span>
                 </div>
-                <div className="flex items-center gap-1 text-[11px] font-mono text-stone-300">
-                  <span>/prayer-check</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+                <div className="flex items-center gap-1 text-xs font-medium text-[#DFBA7F]">
+                  <ChevronRight className="w-4 h-4" />
                 </div>
               </button>
             </div>
@@ -408,10 +407,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-cinzel font-bold tracking-widest text-[#DFBA7F] uppercase">
                       {t(lang, 'quranHeader')}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold bg-[#C9A063]/20 text-[#DFBA7F] border border-[#C9A063]/35 flex items-center gap-1">
-                      <GraduationCap className="w-3 h-3" />
-                      AI
                     </span>
                   </div>
                   <h3 className={`text-lg font-bold font-serif-heading ${isDark ? 'text-[#F5EFE6]' : 'text-stone-900'}`}>
@@ -639,14 +634,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-base font-cinzel font-bold tracking-wider text-[#DFBA7F]">
-                      ✦ {t(lang, 'noorAiHeader')}
+                      ✦ Noor Companion
                     </h3>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#C9A063]/25 text-[#DFBA7F] border border-[#C9A063]/40">
-                      {t(lang, 'askNoorAi')}
+                      Ask Noor
                     </span>
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                      Live AI
+                      Live Guide
                     </span>
                   </div>
                   <p className="text-xs text-stone-300 font-light mt-0.5">

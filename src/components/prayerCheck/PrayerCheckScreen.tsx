@@ -12,10 +12,10 @@ import {
   Compass,
   ArrowRight,
   ChevronRight,
-  Database,
   BellRing,
   Heart,
   ExternalLink,
+  Lock,
 } from 'lucide-react';
 import { PrayerName, PrayerRecord, PrayerTimingItem } from '../../types/prayerCheck';
 import {
@@ -23,6 +23,7 @@ import {
   PRAYER_ARABIC_NAMES,
   fetchAladhanPrayerTimes,
   getPrayerScheduleMetrics,
+  isPrayerTimeArrived,
   ON_TIME_GRACE_PERIOD_MINUTES,
   AUTO_MISS_THRESHOLD_MINUTES,
 } from '../../utils/aladhanService';
@@ -180,7 +181,11 @@ export const PrayerCheckScreen: React.FC<PrayerCheckScreenProps> = ({
 
   // Stats calculation
   const totalCompleted = Object.values(todayRecords).filter((r) => r && (r.status === 'on_time' || r.status === 'late')).length;
-  const totalSworn = Object.values(todayRecords).filter((r) => r?.oathGiven).length;
+
+  // Arrived prayers check
+  const arrivedPrayers = PRAYER_NAMES.filter((p) => isPrayerTimeArrived(timings[p], currentTime));
+  const unrecordedArrived = arrivedPrayers.find((p) => !todayRecords[p]);
+  const quickCheckPrayer = unrecordedArrived || (arrivedPrayers.length > 0 ? arrivedPrayers[arrivedPrayers.length - 1] : null);
 
   return (
     <div className="min-h-screen py-6 px-3 sm:px-6 max-w-5xl mx-auto space-y-6">
@@ -196,47 +201,41 @@ export const PrayerCheckScreen: React.FC<PrayerCheckScreenProps> = ({
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#C9A063]/15 border border-[#C9A063]/30 text-[#DFBA7F] text-xs font-mono font-medium">
               <Compass className="w-3.5 h-3.5" />
-              <span>Route: /prayer-check</span>
-              <span className="text-stone-500">•</span>
               <span className="capitalize">{userLocation}</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-serif-heading font-bold text-white tracking-wide">
-              Prayer Check & Oath Sanctuary
+              Daily Prayer Check & Sanctuary
             </h1>
             <p className="text-xl font-arabic text-[#DFBA7F]" dir="rtl">
-              تحقيق الصلوات الخمس بنظام القَسَم الشرعي
+              تحقيق ومتابعة الصلوات الخمس اليومية
             </p>
             <p className="text-xs sm:text-sm text-stone-300 font-light max-w-2xl leading-relaxed">
-              Confirm each of the 5 daily prayers under a sacred oath before Allah. Verified with Aladhan astronomical calculations, a 10-minute on-time grace period, and strict 20-second oath contemplation.
+              Confirm each of the 5 daily prayers when their time arrives. Each prayer unlocks at its scheduled time with authentic astronomical timings and honest accountability.
             </p>
           </div>
 
-          {/* Quick Action Badges & Aladhan API Status */}
+          {/* Quick Action */}
           <div className="flex flex-col sm:flex-row md:flex-col gap-2.5 shrink-0 w-full md:w-auto">
-            <button
-              type="button"
-              onClick={() => handleOpenCheck(activePrayerItem.name)}
-              className="py-3 px-5 rounded-2xl bg-gradient-to-r from-[#C9A063] via-[#DFBA7F] to-[#C9A063] text-[#050811] text-xs font-bold font-cinzel tracking-wider uppercase shadow-[0_0_20px_rgba(201,160,99,0.35)] hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <Sparkles className="w-4 h-4 text-[#050811]" />
-              <span>Check {activePrayerItem.name} Now</span>
-            </button>
-
-            <div className="flex items-center justify-between gap-2 text-[11px] font-mono text-stone-400 bg-black/40 px-3 py-2 rounded-xl border border-white/5">
-              <span className="flex items-center gap-1.5">
-                <Database className="w-3.5 h-3.5 text-emerald-400" />
-                API: {dataSource === 'aladhan' ? 'Aladhan Cloud' : 'Local Precision'}
-              </span>
+            {quickCheckPrayer ? (
               <button
                 type="button"
-                onClick={() => setIsFaqOpen(true)}
-                className="text-[#DFBA7F] hover:underline flex items-center gap-1 cursor-pointer"
+                onClick={() => handleOpenCheck(quickCheckPrayer)}
+                className="py-3 px-5 rounded-2xl bg-gradient-to-r from-[#C9A063] via-[#DFBA7F] to-[#C9A063] text-[#050811] text-xs font-bold font-cinzel tracking-wider uppercase shadow-[0_0_20px_rgba(201,160,99,0.35)] hover:brightness-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
               >
-                <HelpCircle className="w-3.5 h-3.5" />
-                <span>Oath FAQ</span>
+                <Sparkles className="w-4 h-4 text-[#050811]" />
+                <span>Check {quickCheckPrayer} Now</span>
               </button>
-            </div>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="py-3 px-5 rounded-2xl bg-white/5 border border-white/10 text-stone-500 text-xs font-semibold flex items-center justify-center gap-2 cursor-not-allowed"
+              >
+                <Lock className="w-4 h-4 text-stone-500" />
+                <span>Next: Fajr at {timings.Fajr} (Locked)</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -251,7 +250,7 @@ export const PrayerCheckScreen: React.FC<PrayerCheckScreenProps> = ({
             </h2>
           </div>
           <div className="text-xs font-mono text-[#DFBA7F]">
-            {totalCompleted} of 5 Completed ({totalSworn} Sworn)
+            {totalCompleted} of 5 Completed
           </div>
         </div>
 
@@ -259,8 +258,9 @@ export const PrayerCheckScreen: React.FC<PrayerCheckScreenProps> = ({
           {PRAYER_NAMES.map((prayer) => {
             const timeStr = timings[prayer] || '--:--';
             const record = todayRecords[prayer];
-            const isCurrent = activePrayerItem.name === prayer;
             const arabicName = PRAYER_ARABIC_NAMES[prayer];
+            const hasArrived = isPrayerTimeArrived(timeStr, currentTime);
+            const isCurrent = activePrayerItem.name === prayer && hasArrived;
 
             let statusBadge = (
               <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 text-stone-400 border border-white/10">
@@ -268,17 +268,24 @@ export const PrayerCheckScreen: React.FC<PrayerCheckScreenProps> = ({
               </span>
             );
 
-            if (record) {
+            if (!hasArrived) {
+              statusBadge = (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-stone-800/80 text-stone-400 border border-white/10 flex items-center gap-1">
+                  <Lock className="w-3 h-3 text-stone-400" />
+                  <span>Locked</span>
+                </span>
+              );
+            } else if (record) {
               if (record.status === 'on_time') {
                 statusBadge = (
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">
-                    On Time (Sworn)
+                    On Time
                   </span>
                 );
               } else if (record.status === 'late') {
                 statusBadge = (
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold">
-                    Late (Sworn)
+                    Late
                   </span>
                 );
               } else if (record.status === 'did_not_pray') {
@@ -290,17 +297,25 @@ export const PrayerCheckScreen: React.FC<PrayerCheckScreenProps> = ({
               } else if (record.status === 'missed') {
                 statusBadge = (
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40 font-bold">
-                    Missed (&gt;30m)
+                    Missed
                   </span>
                 );
               }
+            } else {
+              statusBadge = (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold animate-pulse">
+                  Time Arrived
+                </span>
+              );
             }
 
             return (
               <div
                 key={prayer}
                 className={`p-4 rounded-3xl border transition-all duration-200 flex flex-col justify-between space-y-3 relative overflow-hidden ${
-                  isCurrent
+                  !hasArrived
+                    ? 'bg-[#060A14]/70 border-white/5 opacity-80'
+                    : isCurrent
                     ? 'bg-gradient-to-b from-[#131D33] to-[#0A101E] border-[#DFBA7F]/60 shadow-[0_0_20px_rgba(201,160,99,0.15)] ring-1 ring-[#DFBA7F]/30'
                     : 'bg-[#0A101F]/80 border-[#C9A063]/20 hover:border-[#C9A063]/40'
                 }`}
@@ -333,20 +348,34 @@ export const PrayerCheckScreen: React.FC<PrayerCheckScreenProps> = ({
                 </div>
 
                 {/* Card Action Button */}
-                <button
-                  type="button"
-                  onClick={() => handleOpenCheck(prayer)}
-                  className={`w-full py-2 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    record
-                      ? 'bg-white/5 hover:bg-white/10 text-stone-300 border border-white/10'
-                      : isCurrent
-                      ? 'bg-[#C9A063] hover:bg-[#DFBA7F] text-[#07090F] font-bold shadow-md'
-                      : 'bg-white/5 hover:bg-[#C9A063]/20 text-stone-200 border border-[#C9A063]/20'
-                  }`}
-                >
-                  <span>{record ? 'Review / Re-check' : 'Start Check'}</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
+                {!hasArrived ? (
+                  <button
+                    type="button"
+                    disabled
+                    className="w-full py-2.5 px-3 rounded-xl text-xs font-semibold bg-white/[0.03] text-stone-500 border border-white/5 cursor-not-allowed flex items-center justify-center gap-1.5"
+                  >
+                    <Lock className="w-3.5 h-3.5 text-stone-500" />
+                    <span>Locked until {timeStr}</span>
+                  </button>
+                ) : record ? (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenCheck(prayer)}
+                    className="w-full py-2.5 px-3 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 text-stone-300 border border-white/10 flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Recorded (Re-check)</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenCheck(prayer)}
+                    className="w-full py-2.5 px-3 rounded-xl text-xs font-bold bg-gradient-to-r from-[#C9A063] via-[#DFBA7F] to-[#C9A063] text-[#07090F] shadow-[0_0_15px_rgba(201,160,99,0.3)] hover:brightness-110 flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-[#07090F]" />
+                    <span>Did You Pray?</span>
+                  </button>
+                )}
               </div>
             );
           })}
@@ -355,46 +384,57 @@ export const PrayerCheckScreen: React.FC<PrayerCheckScreenProps> = ({
 
       {/* Educational Banner & Rules Explanation */}
       <div className="p-6 rounded-3xl bg-[#090E1C]/90 border border-[#C9A063]/20 shadow-lg space-y-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
-            <ShieldAlert className="w-5 h-5" />
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-serif-heading font-bold text-[#DFBA7F]">
+                How the 4-Step Prayer Verification Operates
+              </h3>
+              <p className="text-xs text-stone-400 font-sans">
+                Authentic Islamic accountability with zero cloud synchronization
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-serif-heading font-bold text-[#DFBA7F]">
-              How the 4-Step Oath System Operates
-            </h3>
-            <p className="text-xs text-stone-400 font-sans">
-              Authentic Islamic accountability with zero cloud synchronization
-            </p>
-          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsFaqOpen(true)}
+            className="text-xs font-semibold text-[#DFBA7F] hover:text-white bg-white/5 hover:bg-white/10 px-3.5 py-1.5 rounded-xl border border-[#C9A063]/30 transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <HelpCircle className="w-3.5 h-3.5" />
+            <span>Oath FAQ & Rulings</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs text-stone-300 leading-relaxed">
           <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 space-y-1">
-            <strong className="text-[#DFBA7F] block">STEP 1: Trigger & Time</strong>
+            <strong className="text-[#DFBA7F] block">STEP 1: Unlocked on Time</strong>
             <p>
-              At prayer time, choose between <em>On time</em> (within 10-minute grace period) or <em>Late</em>. Auto-logs as missed after 30 minutes.
+              Each prayer unlocks at its exact time. You are asked directly whether you prayed (On time or Late/Qada) or not.
             </p>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 space-y-1">
-            <strong className="text-amber-400 block">STEP 2: Oath Education</strong>
+            <strong className="text-amber-400 block">STEP 2: Mindful Reflection</strong>
             <p>
-              Explains the gravity of <em>Al-Yameen Al-Ghamoos</em>. <strong>"I Understand"</strong> is locked for 20 seconds, persisting across reloads.
+              Reflect on truthfulness and Islamic accountability. <strong>"I Understand"</strong> is locked for 20 seconds of contemplation.
             </p>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 space-y-1">
-            <strong className="text-emerald-400 block">STEP 3: Solemn Oath</strong>
+            <strong className="text-emerald-400 block">STEP 3: Confirmation</strong>
             <p>
-              Declare the oath in Arabic calligraphy or freely select <em>"I Did Not Pray"</em> with zero guilt and no oath needed.
+              Declare confirmation with Arabic testimony, or choose <em>"I Did Not Pray"</em> with zero guilt.
             </p>
           </div>
 
           <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 space-y-1">
-            <strong className="text-purple-400 block">STEP 4: Covenant Logged</strong>
+            <strong className="text-purple-400 block">STEP 4: Record Saved</strong>
             <p>
-              If sworn: <em>"May Allah accept it"</em>. If not: <em>"Allah is Most Merciful"</em>. Saved exclusively to your browser's IndexedDB.
+              If completed: <em>"May Allah accept it"</em>. If not: <em>"Allah is Most Merciful"</em>. Saved exclusively to your browser's IndexedDB.
             </p>
           </div>
         </div>
@@ -471,9 +511,6 @@ export const PrayerCheckScreen: React.FC<PrayerCheckScreenProps> = ({
                       }`}
                     >
                       {rec.status.replace('_', ' ')}
-                    </span>
-                    <span className="text-[10px] text-stone-400 font-mono">
-                      {rec.oathGiven ? 'Sworn' : 'No Oath'}
                     </span>
                   </div>
                 </div>

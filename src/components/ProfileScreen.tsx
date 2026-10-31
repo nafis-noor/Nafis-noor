@@ -170,6 +170,15 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const currentLangInfo =
     SUPPORTED_LANGUAGES.find((item) => item.code === lang) || SUPPORTED_LANGUAGES[0];
 
+  const isArabic = lang === 'ar' || userStats.language?.toLowerCase() === 'arabic' || userStats.language === 'ar';
+  const brandLogoSrc = isArabic
+    ? isDark
+      ? 'https://img.sanishtech.com/u/c27ec4b880ed6f9d1c398385cd4790a3.png'
+      : 'https://img.sanishtech.com/u/8b0cc1b6055049716411f780bf6b6e90.png'
+    : isDark
+      ? 'https://img.sanishtech.com/u/21e7bce128c39c8eb9a5a9870664ef8b.png'
+      : 'https://img.sanishtech.com/u/4f2f8a66cabf9b839fe22c39eec15022.png';
+
   const currentThemeMode: ThemePreferenceMode =
     themePreference ||
     (userStats.themePreference as ThemePreferenceMode) ||
@@ -1356,7 +1365,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             <div className="flex flex-wrap items-center gap-2 pt-0.5">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-semibold bg-[#C9A063]/15 text-[#DFBA7F] border border-[#C9A063]/35 shadow-xs">
                 <img
-                  src="https://img.sanishtech.com/u/aedaacef3b13332c64e4ba840ff41804.png"
+                  src={brandLogoSrc}
                   alt="Saudi Tech"
                   loading="lazy"
                   decoding="async"

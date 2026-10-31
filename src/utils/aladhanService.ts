@@ -119,6 +119,15 @@ export function parsePrayerDate(timeStr: string, date: Date = new Date()): Date 
 }
 
 /**
+ * Checks whether a scheduled prayer time has arrived for the current date/time
+ */
+export function isPrayerTimeArrived(timeStr: string, now: Date = new Date()): boolean {
+  if (!timeStr) return false;
+  const prayerDate = parsePrayerDate(timeStr, now);
+  return now.getTime() >= prayerDate.getTime();
+}
+
+/**
  * Determines current prayer schedule status, active prayer, and elapsed minutes
  */
 export function getPrayerScheduleMetrics(timings: Record<PrayerName, string>, now: Date = new Date()) {

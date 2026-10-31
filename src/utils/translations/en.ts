@@ -95,7 +95,7 @@ export const en: Record<TranslationKey, string> = {
   continueReading: 'Continue Reading',
   recentSurah: 'Recent Surah',
   tasbihCounter: 'Tasbih & Dhikr',
-  askNoorAi: 'Ask Noor AI',
+  askNoorAi: 'Ask Noor',
   trackPrayer: 'Log Prayer',
   prayersCompletedToday: '{count} of 5 prayers logged today',
   tapToLog: 'Tap to log',

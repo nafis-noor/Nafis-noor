@@ -84,6 +84,15 @@ export const Navigation: React.FC<NavigationProps> = memo(({
   const todayStr = new Date().toISOString().slice(0, 10);
   const isCompletedToday = lastActivityDate === todayStr;
 
+  const isArabic = lang === 'ar' || language?.toLowerCase() === 'arabic' || language === 'ar';
+  const bottomLogoSrc = isArabic
+    ? isDark
+      ? 'https://img.sanishtech.com/u/c27ec4b880ed6f9d1c398385cd4790a3.png'
+      : 'https://img.sanishtech.com/u/8b0cc1b6055049716411f780bf6b6e90.png'
+    : isDark
+      ? 'https://img.sanishtech.com/u/21e7bce128c39c8eb9a5a9870664ef8b.png'
+      : 'https://img.sanishtech.com/u/4f2f8a66cabf9b839fe22c39eec15022.png';
+
   const desktopTabs = [
     { id: 'home' as NavTab, label: t(lang, 'home'), icon: Home, desc: t(lang, 'homeDesc') },
     { id: 'prayer-check' as NavTab, label: 'Prayer Check', icon: ShieldAlert, desc: '5 Prayers Oath Verification' },
@@ -213,11 +222,11 @@ export const Navigation: React.FC<NavigationProps> = memo(({
         {/* Bottom Sidebar: Watermark Emblem, Streak Badge, Theme Switcher & User */}
         <div className="space-y-2.5 pt-3 border-t border-[#C9A063]/15">
           {/* Watermark Emblem above the streak count (not in a button / no separate box) */}
-          <div className="flex items-center justify-center select-none pointer-events-none py-0.5">
+          <div className="flex items-center justify-center select-none pointer-events-none py-1 px-2">
             <img
-              src="https://img.sanishtech.com/u/59fc8ef159d2ee447a601c269ea4ccb7.png"
-              alt="Emblem"
-              className="h-8 xl:h-9 w-auto max-w-[150px] object-contain opacity-80 hover:opacity-100 transition-opacity select-none pointer-events-none drop-shadow-xs"
+              src={bottomLogoSrc}
+              alt="Logo"
+              className="h-9 xl:h-10 w-auto max-w-[180px] object-contain opacity-90 hover:opacity-100 transition-opacity select-none pointer-events-none drop-shadow-xs"
               loading="lazy"
               decoding="async"
             />

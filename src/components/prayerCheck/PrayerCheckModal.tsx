@@ -67,39 +67,7 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
     day: 'numeric',
   });
 
-  // Calculate 30-min auto miss countdown based on current time vs scheduled time
-  useEffect(() => {
-    if (!isOpen || currentStep === 4) return;
-
-    const calculateAutoMiss = () => {
-      const now = new Date();
-      const [hours, mins] = scheduledTimeStr.split(':').map(Number);
-      const scheduledDate = new Date(prayerDate);
-      scheduledDate.setHours(hours, mins, 0, 0);
-
-      const elapsedMs = Math.max(0, now.getTime() - scheduledDate.getTime());
-      const elapsedMinutes = Math.floor(elapsedMs / (1000 * 60));
-      const remaining = Math.max(0, 30 - elapsedMinutes);
-      setAutoMissMinutesLeft(remaining);
-
-      // If 30 minutes expired and still in Step 1 with no response, auto-log as missed
-      if (remaining === 0 && currentStep === 1) {
-        handleAutoMiss();
-      }
-    };
-
-    calculateAutoMiss();
-    const interval = setInterval(calculateAutoMiss, 15000);
-    return () => clearInterval(interval);
-  }, [isOpen, currentStep, scheduledTimeStr, prayerDate]);
-
-  const handleAutoMiss = async () => {
-    const record = await markPrayerAsMissed(prayerId, dateStr, prayerName, scheduledTimeStr);
-    setFinalStatus('missed');
-    setOathGiven(false);
-    setCurrentStep(4);
-    if (onComplete) onComplete(record);
-  };
+  // No auto-marking: user is always asked directly whether they prayed
 
   // STEP 2: 20-Second Locked Countdown with Timestamp Delta Persistence
   useEffect(() => {
@@ -238,10 +206,10 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
                   Prayer Check — Step {currentStep} of 4
                 </h3>
                 <p className="text-[11px] text-stone-400 font-sans">
-                  {currentStep === 1 && 'Prayer Arrival & Timing'}
-                  {currentStep === 2 && 'Solemn Oath Education'}
-                  {currentStep === 3 && 'Confirmation Under Oath'}
-                  {currentStep === 4 && 'Covenant Logged'}
+                  {currentStep === 1 && 'Prayer Verification'}
+                  {currentStep === 2 && 'Reflection & Mindfulness'}
+                  {currentStep === 3 && 'Confirmation'}
+                  {currentStep === 4 && 'Record Saved'}
                 </p>
               </div>
             </div>
@@ -272,7 +240,7 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
           </div>
 
           {/* ========================================================================= */}
-          {/* STEP 1: TRIGGER & TIME DETAILS                                            */}
+          {/* STEP 1: ASK IF THEY PRAYED OR NO                                          */}
           {/* ========================================================================= */}
           {currentStep === 1 && (
             <div className="relative z-10 p-6 flex-1 flex flex-col justify-between space-y-6 animate-fadeIn">
@@ -292,7 +260,7 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
                   </p>
                 </div>
 
-                {/* Scheduled Time Banner with 10-Minute Grace Period Callout */}
+                {/* Scheduled Time Banner */}
                 <div className="p-4 rounded-2xl bg-white/[0.04] border border-[#C9A063]/20 max-w-sm mx-auto shadow-inner">
                   <div className="text-xs text-stone-400 uppercase tracking-widest font-mono">
                     Scheduled Prayer Time
@@ -305,24 +273,16 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
                     <span>10-Minute Grace Period counts as On-Time</span>
                   </div>
                 </div>
-
-                {/* Auto-Miss Countdown Warning */}
-                <div className="inline-flex items-center gap-1.5 text-xs text-stone-400 bg-black/40 px-3 py-1.5 rounded-xl border border-white/5">
-                  <Clock className="w-3.5 h-3.5 text-amber-400" />
-                  <span>
-                    Auto-logs as missed in <strong className="text-amber-300">{autoMissMinutesLeft}m</strong> if no response
-                  </span>
-                </div>
               </div>
 
-              {/* Action Buttons: On Time vs Late */}
-              <div className="space-y-3 pt-2">
-                <p className="text-xs text-center text-stone-400 font-sans">
-                  How did you perform this prayer?
+              {/* Action Buttons: Ask "Did you pray?" */}
+              <div className="space-y-3 pt-1">
+                <p className="text-sm font-semibold text-center text-stone-200 font-sans">
+                  Did you pray {prayerName}?
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* On Time Button */}
+                  {/* Yes: On Time */}
                   <button
                     type="button"
                     onClick={() => handleSelectTiming('on_time')}
@@ -331,16 +291,16 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-bold text-emerald-300 flex items-center gap-1.5">
                         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        On Time
+                        Yes — On Time
                       </span>
                       <ChevronRight className="w-4 h-4 text-emerald-400 group-hover:translate-x-1 transition-transform" />
                     </div>
                     <p className="text-[11px] text-emerald-200/70 mt-1 font-light">
-                      Within scheduled time or 10-minute grace period.
+                      Performed within scheduled window or 10m grace period.
                     </p>
                   </button>
 
-                  {/* Late Button */}
+                  {/* Yes: Late / Qada */}
                   <button
                     type="button"
                     onClick={() => handleSelectTiming('late')}
@@ -349,7 +309,7 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-bold text-amber-300 flex items-center gap-1.5">
                         <Clock className="w-4 h-4 text-amber-400" />
-                        Late
+                        Yes — Late / Qada
                       </span>
                       <ChevronRight className="w-4 h-4 text-amber-400 group-hover:translate-x-1 transition-transform" />
                     </div>
@@ -358,37 +318,47 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
                     </p>
                   </button>
                 </div>
+
+                {/* Direct Honest Option: No, I did not pray */}
+                <button
+                  type="button"
+                  onClick={handleDidNotPray}
+                  className="w-full py-3 px-4 rounded-2xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
+                >
+                  <Heart className="w-3.5 h-3.5 text-purple-400" />
+                  <span>No, I did not pray (Record honestly with zero guilt)</span>
+                </button>
               </div>
             </div>
           )}
 
           {/* ========================================================================= */}
-          {/* STEP 2: OATH EDUCATION & 20-SECOND LOCKED COUNTDOWN                       */}
+          {/* STEP 2: REFLECTION & 20-SECOND LOCKED COUNTDOWN                          */}
           {/* ========================================================================= */}
           {currentStep === 2 && (
             <div className="relative z-10 p-6 flex-1 flex flex-col justify-between space-y-5 animate-fadeIn">
               <div className="space-y-4">
-                {/* Solemn Warning Icon */}
+                {/* Solemn Reflection Icon */}
                 <div className="w-14 h-14 rounded-3xl bg-amber-500/15 border border-amber-500/35 flex items-center justify-center text-amber-400 mx-auto shadow-[0_0_20px_rgba(245,158,11,0.2)]">
                   <ShieldAlert className="w-7 h-7 animate-pulse" />
                 </div>
 
                 <div className="text-center space-y-1.5">
                   <h2 className="text-xl sm:text-2xl font-serif-heading font-bold text-[#DFBA7F]">
-                    Solemn Warning: Swearing by Allah
+                    Solemn Reflection: Confirmation before Allah
                   </h2>
                   <p className="text-base font-arabic text-amber-300" dir="rtl">
-                    خطر اليمين الغموس وعِظَم القَسَم بالله
+                    عِظَم الأمانة والصدق أمام الله
                   </p>
                 </div>
 
                 {/* Solemn Education Card */}
                 <div className="p-4 rounded-2xl bg-black/50 border border-amber-500/30 text-stone-200 space-y-2.5 text-xs sm:text-sm leading-relaxed">
                   <p>
-                    In Islam, swearing falsely by Allah (<strong>Al-Yameen Al-Ghamoos</strong>) is classified among the <span className="text-amber-400 font-semibold">greatest major sins</span>. The Prophet Muhammad ﷺ ranked it alongside taking an innocent life and associating partners with Allah (Sahih al-Bukhari 6675).
+                    In Islam, confirming an act of worship before Allah requires sincere truthfulness and Taqwa. The Prophet Muhammad ﷺ taught that honesty leads to righteousness.
                   </p>
                   <p className="text-stone-300">
-                    Swear <strong className="text-white">only if you truly and completely prayed</strong>. If you did not pray, choose <em>"I Did Not Pray"</em> without hesitation in Step 3. There is no shame in honesty, and Allah is Oft-Forgiving.
+                    Confirm <strong className="text-white">only if you truly and completely prayed</strong>. If you did not pray, choose <em>"I Did Not Pray"</em> without hesitation in Step 3. There is no shame in honesty, and Allah is Oft-Forgiving.
                   </p>
                 </div>
 
@@ -400,7 +370,7 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
                     className="inline-flex items-center gap-1.5 text-xs text-[#DFBA7F] hover:text-[#F3D7A4] underline underline-offset-4 font-medium cursor-pointer transition-colors"
                   >
                     <Info className="w-3.5 h-3.5" />
-                    <span>Learn more about the gravity of false oaths in Islam (FAQ)</span>
+                    <span>Learn more about Islamic prayer confirmation (FAQ)</span>
                   </button>
                 </div>
               </div>
@@ -433,7 +403,7 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
                       : 'bg-gradient-to-r from-[#C9A063] via-[#DFBA7F] to-[#C9A063] text-[#080B12] shadow-[0_0_20px_rgba(201,160,99,0.4)] hover:brightness-110 active:scale-95 cursor-pointer'
                   }`}
                 >
-                  <span>I Understand & Acknowledge the Weight of this Oath</span>
+                  <span>I Understand & Sincerely Confirm</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -441,7 +411,7 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
           )}
 
           {/* ========================================================================= */}
-          {/* STEP 3: CONFIRMATION UNDER OATH (OR DID NOT PRAY)                         */}
+          {/* STEP 3: CONFIRMATION (OR DID NOT PRAY)                                    */}
           {/* ========================================================================= */}
           {currentStep === 3 && (
             <div className="relative z-10 p-6 flex-1 flex flex-col justify-between space-y-6 animate-fadeIn">
@@ -459,12 +429,12 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
                   </h2>
                 </div>
 
-                {/* Atmospheric Arabic Calligraphy Oath Box */}
+                {/* Atmospheric Arabic Calligraphy Box */}
                 <div className="p-6 rounded-3xl bg-gradient-to-b from-[#0F182A]/90 to-[#0A101D]/90 border border-[#C9A063]/30 shadow-2xl space-y-3 relative overflow-hidden">
                   <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-[#C9A063]/10 blur-xl pointer-events-none" />
 
                   <p className="text-stone-400 text-xs font-sans uppercase tracking-wider">
-                    Oath Statement in Arabic:
+                    Declaration in Arabic:
                   </p>
 
                   <div className="text-2xl sm:text-3xl font-arabic font-bold text-[#DFBA7F] leading-loose py-2 selection:bg-[#C9A063]/30" dir="rtl">
@@ -472,16 +442,16 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
                   </div>
 
                   <p className="text-xs text-stone-300 font-serif italic border-t border-[#C9A063]/15 pt-3">
-                    "I swear by Allah the Almighty that I have performed the {prayerName} prayer."
+                    "I solemnly confirm before Allah the Almighty that I have performed the {prayerName} prayer."
                   </p>
                 </div>
 
                 <p className="text-[11px] text-stone-400 font-sans max-w-sm mx-auto">
-                  By clicking the gold button below, you take a sacred oath before Allah. If you did not pray, choose the secondary option freely.
+                  By clicking the gold button below, you confirm your prayer before Allah. If you did not pray, choose the secondary option freely.
                 </p>
               </div>
 
-              {/* Two Buttons: Primary Gold (Swear) vs Secondary Ghost (Did Not Pray) */}
+              {/* Two Buttons: Primary Gold (Confirm) vs Secondary Ghost (Did Not Pray) */}
               <div className="space-y-2.5 pt-2">
                 {/* Primary Gold Button */}
                 <button
@@ -490,7 +460,7 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
                   className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#C9A063] via-[#DFBA7F] to-[#C9A063] text-[#07090F] font-cinzel text-xs font-bold tracking-widest uppercase shadow-[0_0_25px_rgba(201,160,99,0.35)] hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer flex items-center justify-center gap-2"
                 >
                   <Sparkles className="w-4 h-4 text-[#07090F]" />
-                  <span>I Swear by Allah I Have Prayed</span>
+                  <span>Confirm I Have Prayed</span>
                 </button>
 
                 {/* Secondary Ghost Button: Did Not Pray */}
@@ -500,7 +470,7 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
                   className="w-full py-3 px-6 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] text-stone-300 hover:text-white border border-white/10 hover:border-white/20 font-sans text-xs font-semibold tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Heart className="w-3.5 h-3.5 text-purple-400" />
-                  <span>I Did Not Pray (No Oath Required)</span>
+                  <span>I Did Not Pray</span>
                 </button>
               </div>
             </div>
@@ -537,7 +507,7 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
                 <div className="p-4 rounded-2xl bg-black/40 border border-[#C9A063]/20 text-xs sm:text-sm text-stone-300 max-w-sm mx-auto leading-relaxed">
                   {oathGiven ? (
                     <p>
-                      Your prayer for <strong>{prayerName}</strong> has been confirmed under oath and securely recorded in your local sanctuary. May Allah make your prayers a light on your countenance and in your grave.
+                      Your prayer for <strong>{prayerName}</strong> has been confirmed and securely recorded in your local sanctuary. May Allah make your prayers a light on your countenance and in your grave.
                     </p>
                   ) : (
                     <p>
@@ -549,10 +519,10 @@ export const PrayerCheckModal: React.FC<PrayerCheckModalProps> = ({
                 {/* Summary Details Badge */}
                 <div className="inline-flex flex-wrap items-center justify-center gap-3 text-[11px] font-mono text-stone-400">
                   <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10">
-                    Status: <strong className="text-white uppercase">{finalStatus.replace('_', ' ')}</strong>
+                    Prayer: <strong className="text-white uppercase">{prayerName}</strong>
                   </span>
                   <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10">
-                    Oath: <strong className={oathGiven ? 'text-emerald-400' : 'text-purple-400'}>{oathGiven ? 'Yes' : 'No'}</strong>
+                    Status: <strong className="text-emerald-400 uppercase">{finalStatus.replace('_', ' ')}</strong>
                   </span>
                   <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10">
                     Storage: <strong className="text-[#DFBA7F]">Local IndexedDB</strong>
